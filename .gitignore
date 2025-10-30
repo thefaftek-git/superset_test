@@ -1,0 +1,37 @@
+# Packer build outputs
+output-qemu/
+output-azure/
+packer_cache/
+*.box
+*.qcow2
+crash.log
+manifest.json
+
+# Packer variables with credentials
+*.pkrvars.hcl
+!*.pkrvars.hcl.example
+variables.auto.pkrvars.hcl
+secrets.pkrvars.hcl
+
+# Packer plugins
+.packer.d/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files with credentials
+.env
+.env.local
+.env.production
+
+# Temporary files
+/tmp/
+*.tmp
