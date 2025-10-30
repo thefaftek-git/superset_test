@@ -2,11 +2,15 @@
 
 Apache Superset deployment automation using Packer.
 
-## Quick Start
+## 🚀 Quick Start
 
 This repository contains a Packer setup to build Apache Superset VM images for both local testing and Azure deployment.
 
-📖 **See [PACKER_README.md](PACKER_README.md) for complete documentation.**
+📖 **New here? Start with [QUICKSTART.md](QUICKSTART.md)**
+
+📚 **Full documentation: [PACKER_README.md](PACKER_README.md)**
+
+🔧 **Having issues? Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
 ### Validate Configuration
 
