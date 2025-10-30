@@ -14,17 +14,23 @@ The Packer setup installs Apache Superset following the official PyPI installati
 - **Redis cache**: Redis for caching and Celery task queue
 - **Systemd service**: Automatic startup with systemd
 - **Production-ready**: Uses Gunicorn with gevent workers
+- **Secure by default**: No hardcoded credentials, all secrets via environment variables
 
 ## Prerequisites
 
-### For Local Testing (QEMU)
+### For All Builds
 - Packer >= 1.9.0
+- **Required credentials** (see Credentials section below):
+  - Superset secret key
+  - Database password
+  - Admin user password
+
+### For Local Testing (QEMU)
 - QEMU installed (`apt-get install qemu-system-x86 qemu-utils`)
 - At least 20GB free disk space
 - 4GB RAM minimum
 
 ### For Azure Deployment
-- Packer >= 1.9.0
 - Azure subscription
 - Azure service principal with appropriate permissions
 - Resource group created: `superset-images`
@@ -48,21 +54,109 @@ The Packer setup installs Apache Superset following the official PyPI installati
     └── packer-validate.yml       # CI/CD validation workflow
 ```
 
+## Credentials Management
+
+**⚠️ IMPORTANT**: This setup does NOT contain hardcoded credentials. All secrets must be provided via environment variables or variables file.
+
+### Required Credentials
+
+1. **Superset Secret Key** - Used for Flask session encryption
+2. **Database Password** - PostgreSQL password for Superset database
+3. **Admin Password** - Initial Superset admin user password
+4. **Azure Credentials** (for Azure builds only)
+
+### Option 1: Environment Variables (Recommended)
+
+Copy the example file and set your credentials:
+
+```bash
+# Copy the example
+cp .env.example .env
+
+# Edit .env and set your values
+nano .env
+
+# Generate a secure secret key
+python3 -c "import secrets; print(secrets.token_urlsafe(32))" >> .env
+
+# Source the environment file
+source .env
+```
+
+Required environment variables:
+```bash
+export SUPERSET_SECRET_KEY="your-secure-random-secret-key"
+export SUPERSET_DB_PASSWORD="your-secure-database-password"
+export SUPERSET_ADMIN_USERNAME="admin"
+export SUPERSET_ADMIN_PASSWORD="your-secure-admin-password"
+export SUPERSET_ADMIN_EMAIL="admin@example.com"
+
+# For Azure builds
+export AZURE_CLIENT_ID="your-client-id"
+export AZURE_CLIENT_SECRET="your-client-secret"
+export AZURE_SUBSCRIPTION_ID="your-subscription-id"
+export AZURE_TENANT_ID="your-tenant-id"
+```
+
+### Option 2: Variables File
+
+```bash
+# Copy the example
+cp azure.pkrvars.hcl.example variables.pkrvars.hcl
+
+# Edit and set your values
+nano variables.pkrvars.hcl
+
+# Build with variables file
+packer build -var-file=variables.pkrvars.hcl superset.pkr.hcl
+```
+
+### Option 3: CI/CD Pipeline Variables
+
+In your CI/CD pipeline (GitHub Actions, Azure DevOps, etc.):
+
+1. Store credentials as **secret variables**
+2. The pipeline will export them as environment variables
+3. Packer will automatically pick them up
+
+**GitHub Actions Example:**
+```yaml
+env:
+  SUPERSET_SECRET_KEY: ${{ secrets.SUPERSET_SECRET_KEY }}
+  SUPERSET_DB_PASSWORD: ${{ secrets.SUPERSET_DB_PASSWORD }}
+  SUPERSET_ADMIN_PASSWORD: ${{ secrets.SUPERSET_ADMIN_PASSWORD }}
+```
+
+**Azure DevOps Example:**
+```yaml
+variables:
+- group: superset-credentials  # Variable group with secrets
+```
+
 ## Quick Start
 
-### 1. Initialize Packer
+### 1. Set Up Credentials
+
+```bash
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your secure values
+source .env
+```
+
+### 2. Initialize Packer
 
 ```bash
 packer init superset.pkr.hcl
 ```
 
-### 2. Validate Configuration
+### 3. Validate Configuration
 
 ```bash
 packer validate superset.pkr.hcl
 ```
 
-### 3. Build Image
+### 4. Build Image
 
 #### Local Testing with QEMU
 
@@ -76,18 +170,8 @@ This will create a QCOW2 image in the `output-qemu` directory.
 
 #### Azure Deployment
 
-First, set your Azure credentials as environment variables:
-
 ```bash
-export AZURE_CLIENT_ID="your-client-id"
-export AZURE_CLIENT_SECRET="your-client-secret"
-export AZURE_SUBSCRIPTION_ID="your-subscription-id"
-export AZURE_TENANT_ID="your-tenant-id"
-```
-
-Then build:
-
-```bash
+# Credentials should already be in environment
 packer build -only=azure-arm.superset superset.pkr.hcl
 ```
 
@@ -101,29 +185,35 @@ You can specify a different Superset version:
 packer build -var "superset_version=3.1.0" superset.pkr.hcl
 ```
 
-### Default Credentials
+### Credentials in Built Image
+
+**⚠️ NO DEFAULT CREDENTIALS**: This setup requires you to provide all credentials during the build.
 
 **Admin User:**
-- Username: `admin`
-- Password: `admin`
+- Username: Set via `SUPERSET_ADMIN_USERNAME` (default: `admin`)
+- Password: **MUST BE SET** via `SUPERSET_ADMIN_PASSWORD`
+- Email: Set via `SUPERSET_ADMIN_EMAIL`
 
 **Database:**
 - PostgreSQL User: `superset`
-- PostgreSQL Password: `superset`
+- PostgreSQL Password: **MUST BE SET** via `SUPERSET_DB_PASSWORD`
 - Database Name: `superset`
+
+**Application:**
+- Secret Key: **MUST BE SET** via `SUPERSET_SECRET_KEY`
 
 **SSH (QEMU only):**
 - Username: `superset`
-- Password: `superset`
+- Password: `superset` (for testing only, change in production)
 
-⚠️ **IMPORTANT**: Change these default credentials in production!
+If credentials are not provided, the build will use placeholder values like `__SUPERSET_DB_PASSWORD__` which will cause the application to fail. **Always provide real credentials.**
 
 ## Accessing Superset
 
 After the VM is running:
 
 1. Superset will be available at: `http://<vm-ip>:8088`
-2. Login with username `admin` and password `admin`
+2. Login with the credentials you set during build
 3. The Superset service runs automatically via systemd
 
 ### Service Management
@@ -214,12 +304,35 @@ sudo -u postgres psql
 
 ## Security Considerations
 
-1. **Change default passwords** before production use
-2. **Configure firewall rules** to restrict access
-3. **Use HTTPS** with proper SSL certificates
-4. **Rotate SECRET_KEY** in production
-5. **Enable authentication** (LDAP, OAuth, etc.)
-6. **Regular updates** of Superset and dependencies
+### Built-in Security Features
+
+✅ **No hardcoded credentials** - All secrets must be provided via environment variables  
+✅ **Placeholder detection** - Missing credentials will be obvious (`__PLACEHOLDER__`)  
+✅ **Sensitive variables** - Credentials marked as sensitive in Packer  
+✅ **Gitignore protection** - Credential files excluded from version control  
+
+### Production Security Checklist
+
+1. **Use strong credentials**
+   - Generate secure random passwords (min 20 characters)
+   - Use `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` for secret keys
+   - Different credentials for dev/staging/production
+
+2. **Secure credential storage**
+   - Store in secrets vault (Azure Key Vault, HashiCorp Vault)
+   - Use CI/CD secret variables
+   - Never commit credentials to version control
+
+3. **Network security**
+   - Configure firewall rules to restrict access
+   - Use HTTPS with proper SSL certificates
+   - Limit SSH access
+
+4. **Ongoing maintenance**
+   - Rotate credentials regularly
+   - Enable authentication (LDAP, OAuth, etc.)
+   - Regular updates of Superset and dependencies
+   - Monitor logs for suspicious activity
 
 ## References
 

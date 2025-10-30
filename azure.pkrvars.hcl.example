@@ -1,18 +1,59 @@
-# Example Packer variables file for Azure deployment
-# Copy this file to azure.pkrvars.hcl and fill in your values
-# Usage: packer build -var-file=azure.pkrvars.hcl -only=azure-arm.superset superset.pkr.hcl
+# Example Packer variables file for deployment
+# Copy this file to variables.pkrvars.hcl and fill in your values
+# Usage: packer build -var-file=variables.pkrvars.hcl superset.pkr.hcl
 
-# Azure credentials (can also be set via environment variables)
+# ============================================================================
+# Azure Credentials (required for Azure builds)
+# ============================================================================
+# Option 1: Uncomment and set values here
 # azure_client_id       = "your-client-id"
 # azure_client_secret   = "your-client-secret"
 # azure_subscription_id = "your-subscription-id"
 # azure_tenant_id       = "your-tenant-id"
 
-# Superset version to install
-superset_version = "3.0.0"
-
-# Note: Uncomment and set the Azure credentials above, or use environment variables:
+# Option 2: Use environment variables (recommended for CI/CD)
 # export AZURE_CLIENT_ID="your-client-id"
 # export AZURE_CLIENT_SECRET="your-client-secret"
 # export AZURE_SUBSCRIPTION_ID="your-subscription-id"
 # export AZURE_TENANT_ID="your-tenant-id"
+
+# ============================================================================
+# Superset Configuration
+# ============================================================================
+
+# Superset version to install
+superset_version = "3.0.0"
+
+# ============================================================================
+# Superset Credentials (REQUIRED - DO NOT USE DEFAULTS IN PRODUCTION)
+# ============================================================================
+# These MUST be set via variables file or environment variables
+# DO NOT commit actual credentials to version control
+
+# Option 1: Set in this file (after copying to variables.pkrvars.hcl)
+# superset_secret_key     = "your-secure-random-secret-key-here"
+# superset_db_password    = "your-secure-database-password"
+# superset_admin_username = "admin"
+# superset_admin_password = "your-secure-admin-password"
+# superset_admin_email    = "admin@example.com"
+
+# Option 2: Use environment variables (recommended for CI/CD)
+# export SUPERSET_SECRET_KEY="your-secure-random-secret-key-here"
+# export SUPERSET_DB_PASSWORD="your-secure-database-password"
+# export SUPERSET_ADMIN_USERNAME="admin"
+# export SUPERSET_ADMIN_PASSWORD="your-secure-admin-password"
+# export SUPERSET_ADMIN_EMAIL="admin@example.com"
+
+# Option 3: Set via pipeline variables (Azure DevOps, GitHub Actions, etc.)
+# In your CI/CD pipeline, set these as secret variables and they will be
+# automatically picked up from the environment
+
+# ============================================================================
+# Security Notes
+# ============================================================================
+# - NEVER commit this file with actual credentials to version control
+# - Use strong, randomly generated passwords (min 20 characters)
+# - Use different credentials for dev, staging, and production
+# - Rotate credentials regularly
+# - Store credentials in a secure vault (Azure Key Vault, HashiCorp Vault, etc.)
+# - In CI/CD pipelines, use secret variables or managed identities

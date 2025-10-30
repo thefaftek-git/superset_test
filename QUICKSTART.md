@@ -21,7 +21,32 @@ cd superset_test
 
 Expected output: ✅ All validation checks passed!
 
-## Step 2: Choose Your Platform
+## Step 2: Set Up Credentials
+
+**⚠️ REQUIRED**: This setup does NOT contain hardcoded credentials. You must provide them.
+
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Generate a secure secret key
+python3 -c "import secrets; print('SUPERSET_SECRET_KEY=' + secrets.token_urlsafe(32))" >> .env
+
+# Edit .env and set all passwords
+nano .env
+
+# Source the environment file
+source .env
+```
+
+**Minimum required variables:**
+- `SUPERSET_SECRET_KEY` - Secure random string (32+ chars)
+- `SUPERSET_DB_PASSWORD` - PostgreSQL password
+- `SUPERSET_ADMIN_PASSWORD` - Admin user password
+
+See `.env.example` for all available options.
+
+## Step 3: Choose Your Platform
 
 ### Option A: Local Testing with QEMU (Recommended for First Time)
 
@@ -32,6 +57,7 @@ This is the fastest way to test the setup without cloud resources.
 packer init superset.pkr.hcl
 
 # Build the image (takes 30-60 minutes)
+# Your credentials from .env will be used automatically
 packer build -only=qemu.superset superset.pkr.hcl
 ```
 
@@ -63,7 +89,7 @@ packer init superset.pkr.hcl
 packer build -only=azure-arm.superset superset.pkr.hcl
 ```
 
-## Step 3: Deploy and Access
+## Step 4: Deploy and Access
 
 ### For QEMU Build
 
@@ -96,7 +122,7 @@ az vm create \
 az vm open-port --resource-group superset-production --name superset-vm --port 8088
 ```
 
-## Step 4: Access Superset
+## Step 5: Access Superset
 
 1. **Get the IP address**:
    - QEMU: `localhost:8088`
@@ -105,26 +131,10 @@ az vm open-port --resource-group superset-production --name superset-vm --port 8
 2. **Open browser**: `http://<ip-address>:8088`
 
 3. **Login**:
-   - Username: `admin`
-   - Password: `admin`
+   - Username: The username you set in `SUPERSET_ADMIN_USERNAME` (default: `admin`)
+   - Password: The password you set in `SUPERSET_ADMIN_PASSWORD`
 
-⚠️ **IMPORTANT**: Change the admin password immediately after first login!
-
-## Step 5: Post-Deployment
-
-### Change Admin Password
-
-```bash
-# SSH into the VM
-ssh superset@<vm-ip>
-
-# Activate Superset environment
-source ~/superset-env/bin/activate
-export SUPERSET_CONFIG_PATH=~/.superset/superset_config.py
-
-# Reset password
-superset fab reset-password --username admin
-```
+## Step 6: Post-Deployment
 
 ### Configure for Production
 

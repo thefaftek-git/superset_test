@@ -10,6 +10,8 @@ manifest.json
 # Packer variables with credentials
 *.pkrvars.hcl
 !*.pkrvars.hcl.example
+variables.auto.pkrvars.hcl
+secrets.pkrvars.hcl
 
 # Packer plugins
 .packer.d/
@@ -24,6 +26,11 @@ manifest.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment files with credentials
+.env
+.env.local
+.env.production
 
 # Temporary files
 /tmp/

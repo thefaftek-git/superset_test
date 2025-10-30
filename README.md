@@ -22,15 +22,17 @@ packer validate superset.pkr.hcl
 ### Build for Azure
 
 ```bash
-# Set Azure credentials
-export AZURE_CLIENT_ID="your-client-id"
-export AZURE_CLIENT_SECRET="your-client-secret"
-export AZURE_SUBSCRIPTION_ID="your-subscription-id"
-export AZURE_TENANT_ID="your-tenant-id"
+# Set credentials via environment variables (see .env.example)
+source .env  # Or export variables individually
 
 # Build image
 packer build -only=azure-arm.superset superset.pkr.hcl
+
+# Or use a variables file
+packer build -var-file=variables.pkrvars.hcl -only=azure-arm.superset superset.pkr.hcl
 ```
+
+**⚠️ Important**: All credentials must be provided via environment variables or variables file. See `.env.example` and `azure.pkrvars.hcl.example` for templates.
 
 ### Test Locally with QEMU
 

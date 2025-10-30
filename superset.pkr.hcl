@@ -26,6 +26,35 @@ variable "superset_version" {
   default = "3.0.0"
 }
 
+# Superset credentials - should be provided via environment variables or variables file
+variable "superset_secret_key" {
+  type      = string
+  default   = env("SUPERSET_SECRET_KEY")
+  sensitive = true
+}
+
+variable "superset_db_password" {
+  type      = string
+  default   = env("SUPERSET_DB_PASSWORD")
+  sensitive = true
+}
+
+variable "superset_admin_username" {
+  type    = string
+  default = env("SUPERSET_ADMIN_USERNAME")
+}
+
+variable "superset_admin_password" {
+  type      = string
+  default   = env("SUPERSET_ADMIN_PASSWORD")
+  sensitive = true
+}
+
+variable "superset_admin_email" {
+  type    = string
+  default = env("SUPERSET_ADMIN_EMAIL")
+}
+
 variable "azure_client_id" {
   type    = string
   default = env("AZURE_CLIENT_ID")
@@ -135,6 +164,13 @@ build {
   # Configure Superset
   provisioner "shell" {
     script = "scripts/configure_superset.sh"
+    environment_vars = [
+      "SUPERSET_SECRET_KEY=${var.superset_secret_key}",
+      "SUPERSET_DB_PASSWORD=${var.superset_db_password}",
+      "SUPERSET_ADMIN_USERNAME=${var.superset_admin_username}",
+      "SUPERSET_ADMIN_PASSWORD=${var.superset_admin_password}",
+      "SUPERSET_ADMIN_EMAIL=${var.superset_admin_email}"
+    ]
   }
 
   # Setup systemd service

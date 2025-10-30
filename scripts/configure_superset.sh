@@ -9,8 +9,11 @@ sudo -u superset mkdir -p /home/superset/.superset
 # Set SUPERSET_CONFIG_PATH
 echo "export SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py" | sudo tee -a /home/superset/.bashrc
 
+# Get credentials from environment variables or use placeholders
+DB_PASSWORD="${SUPERSET_DB_PASSWORD:-__SUPERSET_DB_PASSWORD__}"
+
 # Create basic Superset configuration
-sudo -u superset tee /home/superset/.superset/superset_config.py > /dev/null << 'EOF'
+sudo -u superset tee /home/superset/.superset/superset_config.py > /dev/null << EOF
 import os
 from cachelib.redis import RedisCache
 
@@ -18,10 +21,15 @@ from cachelib.redis import RedisCache
 ROW_LIMIT = 5000
 
 # Flask App Builder configuration
-SECRET_KEY = os.environ.get('SUPERSET_SECRET_KEY', 'CHANGE_THIS_SECRET_KEY_FOR_PRODUCTION')
+# SECRET_KEY should be set via SUPERSET_SECRET_KEY environment variable
+SECRET_KEY = os.environ.get('SUPERSET_SECRET_KEY', '__SUPERSET_SECRET_KEY__')
 
 # The SQLAlchemy connection string to your database backend
-SQLALCHEMY_DATABASE_URI = 'postgresql://superset:superset@localhost/superset'
+# Database password should be set via SUPERSET_DB_PASSWORD environment variable
+SQLALCHEMY_DATABASE_URI = os.environ.get(
+    'SUPERSET_DATABASE_URI',
+    'postgresql://superset:${DB_PASSWORD}@localhost/superset'
+)
 
 # Flask-WTF flag for CSRF
 WTF_CSRF_ENABLED = True
@@ -53,9 +61,11 @@ EOF
 
 # Setup PostgreSQL database for Superset
 echo "Setting up PostgreSQL database..."
+# Use environment variable or placeholder for database password
+DB_PASSWORD="${SUPERSET_DB_PASSWORD:-__SUPERSET_DB_PASSWORD__}"
 sudo -u postgres psql << EOF
 CREATE DATABASE superset;
-CREATE USER superset WITH PASSWORD 'superset';
+CREATE USER superset WITH PASSWORD '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE superset TO superset;
 EOF
 
@@ -65,16 +75,22 @@ sudo -u superset bash -c "source /home/superset/superset-env/bin/activate && \
     export SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py && \
     superset db upgrade"
 
-# Create admin user (username: admin, password: admin)
+# Create admin user with credentials from environment variables
 echo "Creating admin user..."
+ADMIN_USERNAME="${SUPERSET_ADMIN_USERNAME:-admin}"
+ADMIN_PASSWORD="${SUPERSET_ADMIN_PASSWORD:-__SUPERSET_ADMIN_PASSWORD__}"
+ADMIN_EMAIL="${SUPERSET_ADMIN_EMAIL:-admin@example.com}"
+ADMIN_FIRSTNAME="${SUPERSET_ADMIN_FIRSTNAME:-Admin}"
+ADMIN_LASTNAME="${SUPERSET_ADMIN_LASTNAME:-User}"
+
 sudo -u superset bash -c "source /home/superset/superset-env/bin/activate && \
     export SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py && \
     superset fab create-admin \
-        --username admin \
-        --firstname Admin \
-        --lastname User \
-        --email admin@example.com \
-        --password admin" || echo "Admin user may already exist"
+        --username ${ADMIN_USERNAME} \
+        --firstname ${ADMIN_FIRSTNAME} \
+        --lastname ${ADMIN_LASTNAME} \
+        --email ${ADMIN_EMAIL} \
+        --password ${ADMIN_PASSWORD}" || echo "Admin user may already exist"
 
 # Initialize Superset
 echo "Initializing Superset..."
