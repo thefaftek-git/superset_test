@@ -1,0 +1,22 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:
+    hostname: superset-vm
+    username: superset
+    password: $6$rounds=4096$saltsalt$YQz5Z9c9rlF.A7bCMvJYvzJXJzG2wKnXKJWJxVYxVGQb7wZl4l4rNJ4dJ7K1J4J7K1J4J7K1J4J7K1J4J7K1J1
+  ssh:
+    install-server: true
+    allow-pw: true
+  storage:
+    layout:
+      name: direct
+  packages:
+    - openssh-server
+    - cloud-init
+  late-commands:
+    - echo 'superset ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/superset
+    - chmod 440 /target/etc/sudoers.d/superset

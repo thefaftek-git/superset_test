@@ -1,0 +1,63 @@
+name: Packer Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Packer Template
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "latest"
+      
+      - name: Initialize Packer
+        run: packer init superset.pkr.hcl
+      
+      - name: Validate Packer template
+        run: packer validate superset.pkr.hcl
+      
+      - name: Format check Packer template
+        run: packer fmt -check superset.pkr.hcl
+  
+  build-test:
+    runs-on: ubuntu-latest
+    name: Test Packer Build (Validation Only)
+    needs: validate
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "latest"
+      
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils
+      
+      - name: Initialize Packer
+        run: packer init superset.pkr.hcl
+      
+      - name: Build with Packer (QEMU)
+        run: |
+          # Note: Full QEMU build would take too long for CI
+          # This step demonstrates how to run it manually
+          echo "To build locally, run: packer build -only=qemu.superset superset.pkr.hcl"
+          echo "For Azure deployment, ensure Azure credentials are set and run:"
+          echo "packer build -only=azure-arm.superset superset.pkr.hcl"
+        continue-on-error: true

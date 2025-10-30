@@ -1,0 +1,26 @@
+# Packer build outputs
+output-qemu/
+output-azure/
+packer_cache/
+*.box
+*.qcow2
+crash.log
+manifest.json
+
+# Packer plugins
+.packer.d/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+/tmp/
+*.tmp

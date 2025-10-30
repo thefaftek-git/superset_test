@@ -1,0 +1,25 @@
+[Unit]
+Description=Apache Superset
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=superset
+Group=superset
+Environment="SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py"
+Environment="FLASK_APP=superset"
+WorkingDirectory=/home/superset
+ExecStart=/home/superset/superset-env/bin/gunicorn \
+    -w 10 \
+    -k gevent \
+    --timeout 120 \
+    -b 0.0.0.0:8088 \
+    --limit-request-line 0 \
+    --limit-request-field_size 0 \
+    "superset.app:create_app()"
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
