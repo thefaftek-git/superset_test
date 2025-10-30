@@ -13,7 +13,8 @@ echo "export SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py" |
 DB_PASSWORD="${SUPERSET_DB_PASSWORD:-__SUPERSET_DB_PASSWORD__}"
 
 # Create basic Superset configuration
-sudo -u superset tee /home/superset/.superset/superset_config.py > /dev/null << EOF
+# Note: Using single quotes in EOF to prevent variable expansion
+sudo -u superset tee /home/superset/.superset/superset_config.py > /dev/null << 'EOF'
 import os
 from cachelib.redis import RedisCache
 
@@ -26,9 +27,14 @@ SECRET_KEY = os.environ.get('SUPERSET_SECRET_KEY', '__SUPERSET_SECRET_KEY__')
 
 # The SQLAlchemy connection string to your database backend
 # Database password should be set via SUPERSET_DB_PASSWORD environment variable
+db_user = os.environ.get('SUPERSET_DB_USER', 'superset')
+db_password = os.environ.get('SUPERSET_DB_PASSWORD', '__SUPERSET_DB_PASSWORD__')
+db_host = os.environ.get('SUPERSET_DB_HOST', 'localhost')
+db_name = os.environ.get('SUPERSET_DB_NAME', 'superset')
+
 SQLALCHEMY_DATABASE_URI = os.environ.get(
     'SUPERSET_DATABASE_URI',
-    'postgresql://superset:${DB_PASSWORD}@localhost/superset'
+    f'postgresql://{db_user}:{db_password}@{db_host}/{db_name}'
 )
 
 # Flask-WTF flag for CSRF
@@ -59,10 +65,23 @@ class CeleryConfig:
 CELERY_CONFIG = CeleryConfig
 EOF
 
+# Create environment file for systemd service
+echo "Creating environment file for systemd service..."
+sudo mkdir -p /etc/superset
+sudo tee /etc/superset/environment > /dev/null << EOF
+SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py
+FLASK_APP=superset
+SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY:-__SUPERSET_SECRET_KEY__}
+SUPERSET_DB_PASSWORD=${DB_PASSWORD}
+EOF
+
+# Secure the environment file
+sudo chmod 600 /etc/superset/environment
+sudo chown superset:superset /etc/superset/environment
+
 # Setup PostgreSQL database for Superset
 echo "Setting up PostgreSQL database..."
-# Use environment variable or placeholder for database password
-DB_PASSWORD="${SUPERSET_DB_PASSWORD:-__SUPERSET_DB_PASSWORD__}"
+# DB_PASSWORD already set at the top of the script
 sudo -u postgres psql << EOF
 CREATE DATABASE superset;
 CREATE USER superset WITH PASSWORD '${DB_PASSWORD}';

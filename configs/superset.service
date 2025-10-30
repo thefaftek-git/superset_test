@@ -7,8 +7,7 @@ Wants=postgresql.service redis-server.service
 Type=simple
 User=superset
 Group=superset
-Environment="SUPERSET_CONFIG_PATH=/home/superset/.superset/superset_config.py"
-Environment="FLASK_APP=superset"
+EnvironmentFile=/etc/superset/environment
 WorkingDirectory=/home/superset
 ExecStart=/home/superset/superset-env/bin/gunicorn \
     -w 10 \
