@@ -11,6 +11,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     name: Validate Packer Template
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -35,6 +37,8 @@ jobs:
     name: Test Packer Build (Validation Only)
     needs: validate
     if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code

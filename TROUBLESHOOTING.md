@@ -134,7 +134,7 @@ az vm list-sizes --location "East US" -o table
 3. Check Python version compatibility:
    ```bash
    python3 --version
-   # Superset 3.0 requires Python 3.9+
+   # Superset requires Python 3.9 or higher (check official docs for your version)
    ```
 
 ### Issue: "PostgreSQL connection refused"
