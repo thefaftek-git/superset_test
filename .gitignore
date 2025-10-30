@@ -7,6 +7,10 @@ packer_cache/
 crash.log
 manifest.json
 
+# Packer variables with credentials
+*.pkrvars.hcl
+!*.pkrvars.hcl.example
+
 # Packer plugins
 .packer.d/
 

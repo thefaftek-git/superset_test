@@ -1,0 +1,18 @@
+# Example Packer variables file for Azure deployment
+# Copy this file to azure.pkrvars.hcl and fill in your values
+# Usage: packer build -var-file=azure.pkrvars.hcl -only=azure-arm.superset superset.pkr.hcl
+
+# Azure credentials (can also be set via environment variables)
+# azure_client_id       = "your-client-id"
+# azure_client_secret   = "your-client-secret"
+# azure_subscription_id = "your-subscription-id"
+# azure_tenant_id       = "your-tenant-id"
+
+# Superset version to install
+superset_version = "3.0.0"
+
+# Note: Uncomment and set the Azure credentials above, or use environment variables:
+# export AZURE_CLIENT_ID="your-client-id"
+# export AZURE_CLIENT_SECRET="your-client-secret"
+# export AZURE_SUBSCRIPTION_ID="your-subscription-id"
+# export AZURE_TENANT_ID="your-tenant-id"
